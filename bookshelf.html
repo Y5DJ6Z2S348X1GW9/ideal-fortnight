@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>书柜 - 在线漫画分享书架</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-0">书柜</h1>
+            <a href="index.html" class="inline-flex items-center px-4 py-2 rounded-lg font-semibold text-sm btn-secondary">
+                <i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i>
+                返回首页
+            </a>
+        </header>
+
+        <main>
+            <div id="comic-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-8">
+                <div class="col-span-full flex justify-center items-center py-10">
+                    <i data-lucide="loader" class="animate-spin h-10 w-10 text-blue-600"></i>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const comicGrid = document.getElementById('comic-grid');
+            const header = document.querySelector('h1');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookshelfId = urlParams.get('id') || '1';
+            header.textContent = `书柜 #${bookshelfId}`;
+            document.title = `书柜 #${bookshelfId} - 在线漫画分享书架`;
+
+            try {
+                const response = await fetch(`/api/bookshelf/${bookshelfId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const comics = await response.json();
+                
+                comicGrid.innerHTML = '';
+
+                if (comics.length === 0) {
+                     comicGrid.innerHTML = `<p class="col-span-full text-center text-gray-500">这个书柜是空的。</p>`;
+                } else {
+                    comics.forEach(comic => {
+                        const card = document.createElement('div');
+                        card.className = 'comic-card bg-white rounded-lg shadow-md overflow-hidden group transition-transform duration-300 ease-in-out hover:-translate-y-2';
+                        
+                        const readerUrl = `reader.html?id=${comic.id}&type=${comic.type}&bookshelf=${bookshelfId}`;
+
+                        card.innerHTML = `
+                            <a href="${readerUrl}" class="block cursor-pointer">
+                                <div class="aspect-[3/4] bg-gray-200 flex items-center justify-center text-gray-400 relative">
+                                    <i data-lucide="image" class="w-12 h-12"></i>
+                                    <span class="absolute bottom-2 right-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">${comic.type.toUpperCase()}</span>
+                                </div>
+                                <div class="p-3">
+                                    <h3 class="font-semibold text-base text-gray-800 truncate group-hover:text-blue-600">${comic.title}</h3>
+                                    <p class="text-sm text-gray-500 mt-1">${comic.author || '未知作者'}</p>
+                                </div>
+                            </a>
+                        `;
+                        comicGrid.appendChild(card);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to fetch comics:', error);
+                comicGrid.innerHTML = `<p class="col-span-full text-center text-red-500">加载漫画失败，请稍后重试。</p>`;
+            }
+            
+            lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
